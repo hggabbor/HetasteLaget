@@ -1,11 +1,11 @@
 import {useEffect, useRef, useState} from "react";
-import {initializeApp} from "firebase/app";
-import {getDatabase, ref, onValue} from "firebase/database";
+import {FirebaseOptions, initializeApp} from "firebase/app";
+import {getDatabase, ref, onValue, get} from "firebase/database";
 import BaseChart from "../../components/BaseChart";
 import {ThemedText} from "@/components/ThemedText";
 
 export default function Index() {
-    const firebaseConfig = {
+    const firebaseConfig:FirebaseOptions = {
         apiKey: "AIzaSyBqmUEkalnwm9QpIFN2-uwvZSylbWOC5Zw",
         authDomain: "temperatur-9a74e.firebaseapp.com",
         databaseURL: "https://temperatur-9a74e-default-rtdb.europe-west1.firebasedatabase.app",
@@ -22,7 +22,6 @@ export default function Index() {
     const [divisions, setDivisions] = useState<number>(2);
     const [visibleDivs, setVisibleDivs] = useState<string>(divisions.toString());
     const [isValid, setIsValid] = useState<boolean>(true);
-    const [firebaseCallback, setFirebaseCallback] = useState(null);
 
 
     const min = 1;
@@ -50,7 +49,10 @@ export default function Index() {
 
     useEffect(() => {
         let date = new Date(Date.now());
-        dateInput.current.value = date.toISOString().split("T")[0];
+        if(dateInput.current) {
+            // @ts-ignore
+            dateInput.current.value = date.toISOString().split("T")[0];
+        }
         setSelectedDate(date);
     }, [dateInput]);
 
@@ -59,48 +61,49 @@ export default function Index() {
 
         const path = `Room/${selectedDate.getFullYear()}/${selectedDate.getMonth() + 1}/${selectedDate.getDate()}`;
         const dataRef = ref(db, path);
-        onValue(dataRef, (snapshot) => {
-            const data = snapshot.val();
-            let chartData = [];
+        get(dataRef).then(
+            (snapshot) => {
+                const data = snapshot.val();
+                let chartData = [];
 
-            for (let hour in data) {
-                let sections = [];
-                let minutesPerDivision = max / divisions;
+                for (let hour in data) {
+                    let sections = [];
+                    let minutesPerDivision = max / divisions;
 
-                for (let i = 0; i < divisions; i++) {
-                    sections[i] = [];
+                    for (let i = 0; i < divisions; i++) {
+                        sections[i] = [];
 
-                    for (let minute in data[hour]) {
-                        if (Number(minute) <= i * minutesPerDivision)
-                            sections[i].push(data[hour][minute]);
+                        for (let minute in data[hour]) {
+                            if (Number(minute) <= i * minutesPerDivision)
+                                sections[i].push(data[hour][minute]);
+                        }
+                    }
+
+                    for (let i = 0; i < sections.length; i++) {
+                        let temp = sections[i].reduce((n, {temperature}) => n + temperature, 0) / sections[i].length
+                        let hum = sections[i].reduce((n, {humidity}) => n + humidity, 0) / sections[i].length
+
+                        let formattedMinutes = (i * minutesPerDivision).toLocaleString('sv-SE', {
+                            minimumIntegerDigits: 2,
+                            useGrouping: false
+                        })
+
+                        if (!hum) continue;
+                        if (!temp) continue;
+
+                        chartData.push({
+                            time: `${hour}:${formattedMinutes}`,
+                            temperature: temp,
+                            humidity: hum,
+                        });
                     }
                 }
 
-                for (let i = 0; i < sections.length; i++) {
-                    let temp = sections[i].reduce((n, {temperature}) => n + temperature, 0) / sections[i].length
-                    let hum = sections[i].reduce((n, {humidity}) => n + humidity, 0) / sections[i].length
+                console.log(chartData);
+                console.log(data);
 
-                    let formattedMinutes = (i * minutesPerDivision).toLocaleString('sv-SE', {
-                        minimumIntegerDigits: 2,
-                        useGrouping: false
-                    })
-
-                    if (!hum) continue;
-                    if (!temp) continue;
-
-                    chartData.push({
-                        time: `${hour}:${formattedMinutes}`,
-                        temperature: temp,
-                        humidity: hum,
-                    });
-                }
-            }
-
-            console.log(chartData);
-            console.log(data);
-
-            setChartData(chartData)
-        });
+                setChartData(chartData)
+            });
     }, [db, selectedDate, divisions]);
 
     return (
@@ -152,26 +155,24 @@ export default function Index() {
                 </div>
 
                 <div className="row w-100 justify-content-evenly">
-                    <div className="col-12 col-sm-10 col-md-8 col-lg-5 fs-3">
-                        <ThemedText type="defaultSemiBold">Temperature:</ThemedText>
-                        <div className="w-100" style={{height: "1rem"}}></div>
+                    <div className="col-12 col-sm-10 col-md-8 col-lg-5 fs-3 mt-5">
                         <BaseChart
                             yAxisName="Temperature"
                             yKey="temperature"
                             xKey="time"
                             chartData={chartData}
                             lineColor="#5090DC"
+                            title="Temperature"
                         />
                     </div>
-                    <div className="col-12 col-sm-10 col-md-8 col-lg-5 fs-3">
-                        <ThemedText type="defaultSemiBold">Humidity:</ThemedText>
-                        <div className="w-100" style={{height: "1rem"}}></div>
+                    <div className="col-12 col-sm-10 col-md-8 col-lg-5 fs-3 mt-5">
                         <BaseChart
                             yAxisName="Humidity"
                             yKey="humidity"
                             xKey="time"
                             chartData={chartData}
                             lineColor="orange"
+                            title="Humidity"
                         />
                     </div>
                 </div>

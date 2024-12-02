@@ -11,6 +11,7 @@ export default function BaseChart({
                                       theme = "ag-material-dark",
                                       chartData = [],
                                       lineColor = "",
+                                      title = ""
                                   } : {
     yAxisName: string;
     type: ChartType;
@@ -19,11 +20,15 @@ export default function BaseChart({
     theme: AgChartThemeName;
     chartData: [];
     lineColor: string;
+    title: string;
 }) {
     const [chartOptions, setChartOptions] = useState<AgChartOptions>({
         theme: theme,
         data: [],
-        // Series: Defines which chart type and data to use
+        title: {
+          enabled: true,
+          text: title,
+        },
         series: [
             {
                 type: type,
