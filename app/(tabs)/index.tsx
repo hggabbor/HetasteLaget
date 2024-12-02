@@ -1,74 +1,184 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import {useEffect, useRef, useState} from "react";
+import {initializeApp} from "firebase/app";
+import {getDatabase, ref, onValue} from "firebase/database";
+import BaseChart from "../../components/BaseChart";
+import {ThemedView} from "@/app-example/components/ThemedView";
+import {ThemedText} from "@/components/ThemedText";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export default function Index() {
+    const firebaseConfig = {
+        apiKey: "AIzaSyBqmUEkalnwm9QpIFN2-uwvZSylbWOC5Zw",
+        authDomain: "temperatur-9a74e.firebaseapp.com",
+        databaseURL: "https://temperatur-9a74e-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "temperatur-9a74e",
+        storageBucket: "temperatur-9a74e.firebasestorage.app",
+        messagingSenderId: "502906004078",
+        appId: "1:502906004078:web:20e3ee8ae39ad0260a3c7f",
+        measurementId: "G-D0NN9ZVR2Z"
+    };
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+    const [chartData, setChartData] = useState([]);
+    const dateInput = useRef(null);
+    const divInput = useRef(null);
+    const [divisions, setDivisions] = useState<number>(2);
+    const [visibleDivs, setVisibleDivs] = useState<string>(divisions.toString());
+    const [isValid, setIsValid] = useState<boolean>(true);
+    const [firebaseCallback, setFirebaseCallback] = useState(null);
 
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+
+    const min = 1;
+    const max = 60;
+
+    initializeApp(firebaseConfig);
+    const db = getDatabase();
+
+    const getNextValue = (currentValue : number, newValue : number) => {
+        let direction = currentValue < newValue;
+        let num = newValue;
+
+        while (max % num !== 0) {
+            num += direction ? 1 : -1;
+
+            if (num > max) {
+                num = min;
+            } else if (num < min) {
+                num = max;
+            }
+        }
+
+        return num;
+    }
+
+    useEffect(() => {
+        let date = new Date(Date.now());
+        dateInput.current.value = date.toISOString().split("T")[0];
+        setSelectedDate(date);
+    }, [dateInput]);
+
+    useEffect(() => {
+        if (!selectedDate) return;
+
+        const path = `Room/${selectedDate.getFullYear()}/${selectedDate.getMonth() + 1}/${selectedDate.getDate()}`;
+        const dataRef = ref(db, path);
+        onValue(dataRef, (snapshot) => {
+            const data = snapshot.val() ;
+            let chartData = [];
+
+            for (let hour in data) {
+                let sections = [];
+                let minutesPerDivision = max / divisions;
+
+                for (let i = 0; i < divisions; i++) {
+                    sections[i] = [];
+
+                    for (let minute in data[hour]) {
+                        if (Number(minute) <= i * minutesPerDivision)
+                            sections[i].push(data[hour][minute]);
+                    }
+                }
+
+                for (let i = 0; i < sections.length; i++) {
+                    let temp = sections[i].reduce((n, {temperature}) => n + temperature, 0) / sections[i].length
+                    let hum = sections[i].reduce((n, {humidity}) => n + humidity, 0) / sections[i].length
+
+                    let formattedMinutes = (i * minutesPerDivision).toLocaleString('sv-SE', {
+                        minimumIntegerDigits: 2,
+                        useGrouping: false
+                    })
+
+                    if(!hum) continue;
+                    if(!temp) continue;
+
+                    chartData.push({
+                        time: `${hour}:${formattedMinutes}`,
+                        temperature: temp,
+                        humidity: hum,
+                    });
+                }
+            }
+
+            console.log(chartData);
+            console.log(data);
+
+            setChartData(chartData)
+        });
+    }, [db, selectedDate, divisions]);
+
+    return (
+        <ThemedView>
+            <div className="vh-100 vw-100 bg-dark overflow-x-hidden overflow-y-auto" data-bs-theme="dark">
+                <div className="mt-4">
+                    <div className="w-100 row justify-content-evenly align-items-center mb-3">
+                        <div className="col-12 col-sm-10 col-md-8 col-lg-5 my-3 my-md-0">
+                            <ThemedText type="subtitle">Date:</ThemedText>
+                            <input
+                                id="dateSelect"
+                                className="form-control"
+                                type="date"
+                                ref={dateInput}
+                                onChange={(e) => setSelectedDate(e.target.valueAsDate)}
+                            />
+                        </div>
+                        <div className="col-12 col-sm-10 col-md-8 col-lg-5 my-3 my-lg-0">
+                            <ThemedText type="subtitle" className="my-3 my-lg-0">Readings per hour:</ThemedText>
+
+                            <input
+                                className={`form-control${isValid ? "" : " border-danger"}`}
+                                type="number"
+                                id="readingsHour"
+                                ref={divInput}
+
+                                value={visibleDivs}
+                                onChange={(e) => {
+                                    let num = e.target.value;
+
+                                    if (!num) {
+                                        setIsValid(false);
+                                        setVisibleDivs(num);
+                                        return;
+                                    }
+
+                                    num = e.target.valueAsNumber;
+                                    //setVisibleDivs(num);
+
+                                    let divs = getNextValue(divisions, num);
+
+
+                                    setDivisions(divs);
+                                    setVisibleDivs(divs);
+
+                                    setIsValid(max % divs === 0 && 0 < divs)
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="row w-100 justify-content-evenly">
+                        <div className="col-12 col-sm-10 col-md-8 col-lg-5 fs-3">
+                            <ThemedText type="defaultSemiBold">Temperature:</ThemedText>
+                            <div className="w-100" style={{height: "1rem"}}></div>
+                            <BaseChart
+                                yAxisName="Temperature"
+                                yKey="temperature"
+                                xKey="time"
+                                chartData={chartData}
+                                lineColor="#5090DC"
+                            />
+                        </div>
+                        <div className="col-12 col-sm-10 col-md-8 col-lg-5 fs-3">
+                            <ThemedText type="defaultSemiBold">Humidity:</ThemedText>
+                            <div className="w-100" style={{height: "1rem"}}></div>
+                            <BaseChart
+                                yAxisName="Humidity"
+                                yKey="humidity"
+                                xKey="time"
+                                chartData={chartData}
+                                lineColor="orange"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </ThemedView>
+    );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
