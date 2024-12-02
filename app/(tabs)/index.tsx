@@ -2,7 +2,6 @@ import {useEffect, useRef, useState} from "react";
 import {initializeApp} from "firebase/app";
 import {getDatabase, ref, onValue} from "firebase/database";
 import BaseChart from "../../components/BaseChart";
-import {ThemedView} from "@/app-example/components/ThemedView";
 import {ThemedText} from "@/components/ThemedText";
 
 export default function Index() {
@@ -32,7 +31,7 @@ export default function Index() {
     initializeApp(firebaseConfig);
     const db = getDatabase();
 
-    const getNextValue = (currentValue : number, newValue : number) => {
+    const getNextValue = (currentValue: number, newValue: number) => {
         let direction = currentValue < newValue;
         let num = newValue;
 
@@ -61,7 +60,7 @@ export default function Index() {
         const path = `Room/${selectedDate.getFullYear()}/${selectedDate.getMonth() + 1}/${selectedDate.getDate()}`;
         const dataRef = ref(db, path);
         onValue(dataRef, (snapshot) => {
-            const data = snapshot.val() ;
+            const data = snapshot.val();
             let chartData = [];
 
             for (let hour in data) {
@@ -86,8 +85,8 @@ export default function Index() {
                         useGrouping: false
                     })
 
-                    if(!hum) continue;
-                    if(!temp) continue;
+                    if (!hum) continue;
+                    if (!temp) continue;
 
                     chartData.push({
                         time: `${hour}:${formattedMinutes}`,
@@ -105,80 +104,78 @@ export default function Index() {
     }, [db, selectedDate, divisions]);
 
     return (
-        <ThemedView>
-            <div className="vh-100 vw-100 bg-dark overflow-x-hidden overflow-y-auto" data-bs-theme="dark">
-                <div className="mt-4">
-                    <div className="w-100 row justify-content-evenly align-items-center mb-3">
-                        <div className="col-12 col-sm-10 col-md-8 col-lg-5 my-3 my-md-0">
-                            <ThemedText type="subtitle">Date:</ThemedText>
-                            <input
-                                id="dateSelect"
-                                className="form-control"
-                                type="date"
-                                ref={dateInput}
-                                onChange={(e) => setSelectedDate(e.target.valueAsDate)}
-                            />
-                        </div>
-                        <div className="col-12 col-sm-10 col-md-8 col-lg-5 my-3 my-lg-0">
-                            <ThemedText type="subtitle" className="my-3 my-lg-0">Readings per hour:</ThemedText>
-
-                            <input
-                                className={`form-control${isValid ? "" : " border-danger"}`}
-                                type="number"
-                                id="readingsHour"
-                                ref={divInput}
-
-                                value={visibleDivs}
-                                onChange={(e) => {
-                                    let num = e.target.value;
-
-                                    if (!num) {
-                                        setIsValid(false);
-                                        setVisibleDivs(num);
-                                        return;
-                                    }
-
-                                    num = e.target.valueAsNumber;
-                                    //setVisibleDivs(num);
-
-                                    let divs = getNextValue(divisions, num);
-
-
-                                    setDivisions(divs);
-                                    setVisibleDivs(divs);
-
-                                    setIsValid(max % divs === 0 && 0 < divs)
-                                }}
-                            />
-                        </div>
+        <div className="vh-100 vw-100 bg-dark overflow-x-hidden overflow-y-auto" data-bs-theme="dark">
+            <div className="mt-4">
+                <div className="w-100 row justify-content-evenly align-items-center mb-3">
+                    <div className="col-12 col-sm-10 col-md-8 col-lg-5 my-3 my-md-0">
+                        <ThemedText type="subtitle">Date:</ThemedText>
+                        <input
+                            id="dateSelect"
+                            className="form-control"
+                            type="date"
+                            ref={dateInput}
+                            onChange={(e) => setSelectedDate(e.target.valueAsDate)}
+                        />
                     </div>
+                    <div className="col-12 col-sm-10 col-md-8 col-lg-5 my-3 my-lg-0">
+                        <ThemedText type="subtitle" className="my-3 my-lg-0">Readings per hour:</ThemedText>
 
-                    <div className="row w-100 justify-content-evenly">
-                        <div className="col-12 col-sm-10 col-md-8 col-lg-5 fs-3">
-                            <ThemedText type="defaultSemiBold">Temperature:</ThemedText>
-                            <div className="w-100" style={{height: "1rem"}}></div>
-                            <BaseChart
-                                yAxisName="Temperature"
-                                yKey="temperature"
-                                xKey="time"
-                                chartData={chartData}
-                                lineColor="#5090DC"
-                            />
-                        </div>
-                        <div className="col-12 col-sm-10 col-md-8 col-lg-5 fs-3">
-                            <ThemedText type="defaultSemiBold">Humidity:</ThemedText>
-                            <div className="w-100" style={{height: "1rem"}}></div>
-                            <BaseChart
-                                yAxisName="Humidity"
-                                yKey="humidity"
-                                xKey="time"
-                                chartData={chartData}
-                                lineColor="orange"
-                            />
-                        </div>
+                        <input
+                            className={`form-control${isValid ? "" : " border-danger"}`}
+                            type="number"
+                            id="readingsHour"
+                            ref={divInput}
+
+                            value={visibleDivs}
+                            onChange={(e) => {
+                                let num = e.target.value;
+
+                                if (!num) {
+                                    setIsValid(false);
+                                    setVisibleDivs(num);
+                                    return;
+                                }
+
+                                num = e.target.valueAsNumber;
+                                //setVisibleDivs(num);
+
+                                let divs = getNextValue(divisions, num);
+
+
+                                setDivisions(divs);
+                                setVisibleDivs(divs);
+
+                                setIsValid(max % divs === 0 && 0 < divs)
+                            }}
+                        />
+                    </div>
+                </div>
+
+                <div className="row w-100 justify-content-evenly">
+                    <div className="col-12 col-sm-10 col-md-8 col-lg-5 fs-3">
+                        <ThemedText type="defaultSemiBold">Temperature:</ThemedText>
+                        <div className="w-100" style={{height: "1rem"}}></div>
+                        <BaseChart
+                            yAxisName="Temperature"
+                            yKey="temperature"
+                            xKey="time"
+                            chartData={chartData}
+                            lineColor="#5090DC"
+                        />
+                    </div>
+                    <div className="col-12 col-sm-10 col-md-8 col-lg-5 fs-3">
+                        <ThemedText type="defaultSemiBold">Humidity:</ThemedText>
+                        <div className="w-100" style={{height: "1rem"}}></div>
+                        <BaseChart
+                            yAxisName="Humidity"
+                            yKey="humidity"
+                            xKey="time"
+                            chartData={chartData}
+                            lineColor="orange"
+                        />
                     </div>
                 </div>
             </div>
-        </ThemedView>
+        </div>
     );
 }
