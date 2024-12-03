@@ -3,6 +3,7 @@ import {FirebaseOptions, initializeApp} from "firebase/app";
 import {getDatabase, ref, onValue, get} from "firebase/database";
 import BaseChart from "../../components/BaseChart";
 import {ThemedText} from "@/components/ThemedText";
+import {View} from "react-native";
 
 export default function Index() {
     const firebaseConfig:FirebaseOptions = {
@@ -131,7 +132,7 @@ export default function Index() {
 
                             value={visibleDivs}
                             onChange={(e) => {
-                                let num = e.target.value;
+                                let num:any = e.target.value;
 
                                 if (!num) {
                                     setIsValid(false);
