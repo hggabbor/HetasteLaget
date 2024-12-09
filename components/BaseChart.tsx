@@ -4,7 +4,7 @@ import {AgChartOptions, AgChartThemeName} from "ag-charts-types";
 import {ChartType} from "ag-charts-community/dist/types/src/chart/factory/chartTypes";
 
 export default function BaseChart({
-                                      yAxisName = "CHANGE ME",
+                                      yAxisName,
                                       type = "line",
                                       xKey = "",
                                       yKey = "",
@@ -13,11 +13,11 @@ export default function BaseChart({
                                       lineColor = "",
                                       title = ""
                                   } : {
-    yAxisName: string;
+    yAxisName?: string;
     type: ChartType;
     xKey: string;
     yKey: string;
-    theme: AgChartThemeName;
+    theme?: AgChartThemeName;
     chartData: [];
     lineColor: string;
     title: string;
@@ -40,8 +40,12 @@ export default function BaseChart({
                     fill: lineColor,
                     size: 8
                 }
-            }
-            ],
+            },
+        ],
+        tooltip: {
+            class: lineColor === "orange" ? "chart-tooltip" : undefined,
+        }
+
     });
 
     useEffect(() => {

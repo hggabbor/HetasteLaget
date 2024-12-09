@@ -1,9 +1,9 @@
 import {useEffect, useRef, useState} from "react";
 import {FirebaseOptions, initializeApp} from "firebase/app";
-import {getDatabase, ref, onValue, get} from "firebase/database";
+import {getDatabase, ref, get} from "firebase/database";
 import BaseChart from "../../components/BaseChart";
 import {ThemedText} from "@/components/ThemedText";
-import {View} from "react-native";
+import '@/styles.css';
 
 export default function Index() {
     const firebaseConfig:FirebaseOptions = {

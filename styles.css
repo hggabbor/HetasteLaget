@@ -1,0 +1,13 @@
+.chart-tooltip .ag-chart-tooltip-content {
+    background-color: gold;
+}
+
+.chart-tooltip::after {
+    background-color: gold;
+    border-top-color: gold;
+}
+
+.chart-tooltip::before {
+    background-color: gold;
+    border-top-color: gold;
+}
