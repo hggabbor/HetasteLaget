@@ -163,7 +163,7 @@ export default function Index() {
                             xKey="time"
                             chartData={chartData}
                             lineColor="#5090DC"
-                            title="Temperature"
+                            title="Temperature in °C"
                         />
                     </div>
                     <div className="col-12 col-sm-10 col-md-8 col-lg-5 fs-3 mt-5">
@@ -173,7 +173,7 @@ export default function Index() {
                             xKey="time"
                             chartData={chartData}
                             lineColor="orange"
-                            title="Humidity"
+                            title="Humidity in %"
                         />
                     </div>
                 </div>
